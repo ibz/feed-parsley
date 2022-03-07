@@ -153,7 +153,11 @@ def parse_feed(url):
 
 def extract_feed_links(url, content):
     parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    netloc = parsed_url.netloc
+    netloc_nowww = netloc
+    if netloc_nowww.startswith("www."):
+        netloc_nowww = netloc_nowww[len("www."):]
+    base_url = f"{parsed_url.scheme}://{netloc}"
     soup = BeautifulSoup(content, 'html.parser')
     alt_links = []
     for link in soup.find_all('link', rel='alternate'):
@@ -162,7 +166,9 @@ def extract_feed_links(url, content):
             if not href:
                 continue
             title = link.attrs.get('title')
-            if href.startswith('/'):
+            if href.startswith(f"//{netloc}") or href.startswith(f"//{netloc_nowww}"):
+                href = f"{parsed_url.scheme}:{href}"
+            elif href.startswith('/'):
                 href = f"{base_url}{href}"
             elif href.startswith('../') or '/' not in href:
                 href = f"{base_url}/{href}"
